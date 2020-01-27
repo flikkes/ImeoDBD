@@ -64,6 +64,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.springframework.data/spring-data-jdbc -->
     </dependencies>
 
     <build>
