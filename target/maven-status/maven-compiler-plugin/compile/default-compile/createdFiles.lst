@@ -1,2 +1,5 @@
-de/flikkessoft/ImeoDBD/EntityConverter.class
+de/flikkessoft/ImeoDBD/rest/DataRestController$1.class
 de/flikkessoft/ImeoDBD/ImeoDbdApplication.class
+de/flikkessoft/ImeoDBD/migration/Database.class
+de/flikkessoft/ImeoDBD/EntityConverter.class
+de/flikkessoft/ImeoDBD/rest/DataRestController.class

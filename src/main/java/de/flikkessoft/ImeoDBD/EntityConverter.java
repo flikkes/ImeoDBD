@@ -1,7 +1,9 @@
 package de.flikkessoft.ImeoDBD;
 
+import lombok.Getter;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -9,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Getter
 public class EntityConverter {
     private final String entityName;
     private final Map<String, Class<?>> fieldNameAndType;
@@ -21,14 +24,14 @@ public class EntityConverter {
         this.entityName = objects.get(0).getClass().getSimpleName();
         this.fieldNameAndType = new HashMap<>();
         Arrays.stream(objects.get(0).getClass().getDeclaredFields())
-                .filter(f -> !Modifier.isPublic(f.getModifiers()) && !Modifier.isStatic(f.getModifiers()))
+                .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 .forEach(f -> this.fieldNameAndType.put(f.getName(), f.getType()));
         this.entities = new ArrayList<>();
         for (final Object obj : objects) {
             final Document document = new Document();
             for (final Field f : obj.getClass().getDeclaredFields()) {
                 final int modifiers = f.getModifiers();
-                if (!Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
+                if (!Modifier.isStatic(modifiers)) {
                     f.setAccessible(true);
                     document.put(f.getName(), f.get(obj));
                     f.setAccessible(false);
@@ -38,10 +41,57 @@ public class EntityConverter {
         }
     }
 
+    public EntityConverter(final List<Document> objects, final String collection) {
+        if (objects.size() < 1) {
+            throw new IllegalArgumentException("There must be at least one object to read fields and data from!");
+        }
+        this.fieldNameAndType = new HashMap<>();
+        for (final Document obj : objects) {
+            for (final String key : obj.keySet()) {
+                try {
+                    obj.getInteger(key);
+                    this.fieldNameAndType.put(key, Integer.class);
+                    continue;
+                } catch (final ClassCastException e) {
+                }
+                try {
+                    obj.getLong(key);
+                    this.fieldNameAndType.put(key, Long.class);
+                    continue;
+                } catch (final ClassCastException e) {
+                }
+                try {
+                    obj.getDouble(key);
+                    this.fieldNameAndType.put(key, Double.class);
+                    continue;
+                } catch (final ClassCastException e) {
+                }
+                try {
+                    obj.getBoolean(key);
+                    this.fieldNameAndType.put(key, Boolean.class);
+                    continue;
+                } catch (final ClassCastException e) {
+                }
+                try {
+                    obj.getDate(key);
+                    this.fieldNameAndType.put(key, Date.class);
+                    continue;
+                } catch (final ClassCastException e) {
+                }
+                this.fieldNameAndType.put(key, String.class);
+            }
+        }
+        this.entityName = collection.trim().isEmpty() ? "Document" + System.currentTimeMillis() : collection;
+        this.entities = objects;
+    }
+
     private String getLegalTypeForMySQL(final Class<?> type) {
 
         if (type.equals(short.class) || type.equals(Short.class)) {
             return "SMALLINT";
+        }
+        if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+            return "BOOLEAN";
         }
         if (type.equals(int.class) || type.equals(Integer.class)) {
             return "INT";
@@ -68,13 +118,13 @@ public class EntityConverter {
         return this.entities;
     }
 
-    public void saveMongoDBEntity(final Document object, final MongoTemplate template) {
-        template.insert(object, this.entityName);
+    public void saveMongoDBEntity(final List<Document> objects, final MongoTemplate template) {
+        template.insert(objects, this.entityName);
     }
 
     public String createSQLQuery() {
         String query = "";
-        query += "CREATE TABLE IF NOT EXISTS " + this.entityName + "(id INT NOT NULL AUTO_INCREMENT, ";
+        query += "CREATE TABLE IF NOT EXISTS " + this.entityName + "(id INT PRIMARY KEY AUTO_INCREMENT, ";
         final Iterator<String> iterator = this.fieldNameAndType.keySet().iterator();
         while (iterator.hasNext()) {
             final String fieldName = iterator.next();
@@ -94,6 +144,14 @@ public class EntityConverter {
             query += ");\n";
         }
         return query;
+    }
+
+    public void executeSQLQuery(final String query, final JdbcTemplate template) {
+        for (final String subQuery : query.split("\n")) {
+            if (!subQuery.trim().isEmpty()) {
+                template.execute(subQuery);
+            }
+        }
     }
 
 }
