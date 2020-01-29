@@ -35,10 +35,10 @@ public class DataRestController {
         System.out.println(converter.createSQLQuery());
         switch (database) {
             case MYSQL:
-                converter.executeSQLQuery(converter.createSQLQuery(), jdbcTemplate);
+                converter.saveSQLEntities(jdbcTemplate);
                 break;
             case MONGODB:
-                converter.saveMongoDBEntity(converter.getMongoDBEntities(), mongoTemplate);
+                converter.saveMongoDBEntities(mongoTemplate);
             default:
                 break;
         }

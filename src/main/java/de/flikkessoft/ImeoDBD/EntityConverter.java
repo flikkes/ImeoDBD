@@ -16,6 +16,7 @@ public class EntityConverter {
     private final String entityName;
     private final Map<String, Class<?>> fieldNameAndType;
     private final List<Document> entities;
+    private int idSequence = 1;
 
     public EntityConverter(final List<Object> objects) throws IllegalAccessException {
         if (objects.size() < 1) {
@@ -24,14 +25,14 @@ public class EntityConverter {
         this.entityName = objects.get(0).getClass().getSimpleName();
         this.fieldNameAndType = new HashMap<>();
         Arrays.stream(objects.get(0).getClass().getDeclaredFields())
-                .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                .filter(f -> !Modifier.isStatic(f.getModifiers()) && !f.getName().equals("id"))
                 .forEach(f -> this.fieldNameAndType.put(f.getName(), f.getType()));
         this.entities = new ArrayList<>();
         for (final Object obj : objects) {
             final Document document = new Document();
             for (final Field f : obj.getClass().getDeclaredFields()) {
                 final int modifiers = f.getModifiers();
-                if (!Modifier.isStatic(modifiers)) {
+                if (!Modifier.isStatic(modifiers) && !f.getName().equals("id")) {
                     f.setAccessible(true);
                     document.put(f.getName(), f.get(obj));
                     f.setAccessible(false);
@@ -48,12 +49,13 @@ public class EntityConverter {
         this.fieldNameAndType = new HashMap<>();
         for (final Document obj : objects) {
             for (final String key : obj.keySet()) {
-                try {
-                    obj.getInteger(key);
-                    this.fieldNameAndType.put(key, Integer.class);
-                    continue;
-                } catch (final ClassCastException e) {
-                }
+                if (!key.equals("id") && !key.equals("_id"))
+                    try {
+                        obj.getInteger(key);
+                        this.fieldNameAndType.put(key, Integer.class);
+                        continue;
+                    } catch (final ClassCastException e) {
+                    }
                 try {
                     obj.getLong(key);
                     this.fieldNameAndType.put(key, Long.class);
@@ -118,8 +120,8 @@ public class EntityConverter {
         return this.entities;
     }
 
-    public void saveMongoDBEntity(final List<Document> objects, final MongoTemplate template) {
-        template.insert(objects, this.entityName);
+    public void saveMongoDBEntities(final MongoTemplate template) {
+        template.insert(this.getMongoDBEntities(), this.entityName);
     }
 
     public String createSQLQuery() {
@@ -133,7 +135,7 @@ public class EntityConverter {
         }
         query += ");\n";
         for (final Document document : this.entities) {
-            query += "INSERT INTO " + this.entityName + " VALUES " + "(NULL, ";
+            query += "INSERT INTO " + this.entityName + " VALUES " + "(" + this.idSequence + ", ";
             final Iterator<String> documentIterator = this.fieldNameAndType.keySet().iterator();
             while (documentIterator.hasNext()) {
                 final String fieldName = documentIterator.next();
@@ -142,12 +144,14 @@ public class EntityConverter {
                         .hasNext() ? ", " : "");
             }
             query += ");\n";
+            this.idSequence++;
         }
+        this.idSequence = 1;
         return query;
     }
 
-    public void executeSQLQuery(final String query, final JdbcTemplate template) {
-        for (final String subQuery : query.split("\n")) {
+    public void saveSQLEntities(final JdbcTemplate template) {
+        for (final String subQuery : this.createSQLQuery().split("\n")) {
             if (!subQuery.trim().isEmpty()) {
                 template.execute(subQuery);
             }
