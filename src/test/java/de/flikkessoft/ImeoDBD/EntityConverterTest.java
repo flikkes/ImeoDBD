@@ -1,5 +1,8 @@
 package de.flikkessoft.ImeoDBD;
 
+import de.flikkessoft.ImeoDBD.mongo.TestEntityMongo;
+import de.flikkessoft.ImeoDBD.sql.TestEntity;
+import de.flikkessoft.ImeoDBD.sql.TestEntityRepository;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +52,9 @@ class EntityConverterTest {
     @Test
     void saveLoadSaveMySQLtoMongo() throws IllegalAccessException {
         final List<Document> documents = new ArrayList<>();
-        documents.add(new Document().append("age", 5).append("name", "MyDoc 1").append("someFloat", 4.3f));
-        documents.add(new Document().append("age", 8).append("name", "MyDoc 2").append("someFloat", 4.7f));
-        documents.add(new Document().append("age", 13).append("name", "MyDoc 3").append("someFloat", 4.2f));
+        documents.add(new Document().append("age", 5).append("name", "MyDoc 1").append("someFloat", 4.3));
+        documents.add(new Document().append("age", 8).append("name", "MyDoc 2").append("someFloat", 4.7));
+        documents.add(new Document().append("age", 13).append("name", "MyDoc 3").append("someFloat", 4.2));
 
         final EntityConverter converter = new EntityConverter(documents, "TestEntity");
         converter.saveSQLEntities(this.jdbcTemplate);
@@ -63,6 +66,26 @@ class EntityConverterTest {
 
         final EntityConverter newSaveConverter = new EntityConverter(new ArrayList<Object>(testEntities));
         newSaveConverter.saveMongoDBEntities(mongoTemplate);
+
+    }
+
+    @Test
+    void saveLoadSaveMongotoMySQL() throws IllegalAccessException {
+        final List<Document> documents = new ArrayList<>();
+        documents.add(new Document().append("age", 5).append("name", "MyDoc 1").append("someFloat", 4.3));
+        documents.add(new Document().append("age", 8).append("name", "MyDoc 2").append("someFloat", 4.7));
+        documents.add(new Document().append("age", 13).append("name", "MyDoc 3").append("someFloat", 4.2));
+
+        final EntityConverter converter = new EntityConverter(documents, "TestEntityMongo");
+        converter.saveMongoDBEntities(this.mongoTemplate);
+
+
+        final List<TestEntityMongo> testEntities = this.mongoTemplate
+                .findAll(TestEntityMongo.class, converter.getEntityName());
+
+
+        final EntityConverter newSaveConverter = new EntityConverter(new ArrayList<Object>(testEntities));
+        newSaveConverter.saveSQLEntities(this.jdbcTemplate);
 
     }
 }

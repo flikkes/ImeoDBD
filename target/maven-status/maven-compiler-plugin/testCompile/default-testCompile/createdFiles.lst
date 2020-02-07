@@ -1,3 +1,6 @@
-de/flikkessoft/ImeoDBD/TestEntity.class
-de/flikkessoft/ImeoDBD/ImeoDbdApplicationTests.class
+de/flikkessoft/ImeoDBD/MigrationTest.class
+de/flikkessoft/ImeoDBD/sql/TestEntity.class
 de/flikkessoft/ImeoDBD/EntityConverterTest.class
+de/flikkessoft/ImeoDBD/mongo/TestEntityMongo.class
+de/flikkessoft/ImeoDBD/ImeoDbdApplicationTests.class
+de/flikkessoft/ImeoDBD/sql/TestEntityRepository.class

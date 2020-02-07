@@ -49,38 +49,39 @@ public class EntityConverter {
         this.fieldNameAndType = new HashMap<>();
         for (final Document obj : objects) {
             for (final String key : obj.keySet()) {
-                if (!key.equals("id") && !key.equals("_id"))
+                if (!key.equals("id") && !key.equals("_id")) {
                     try {
                         obj.getInteger(key);
                         this.fieldNameAndType.put(key, Integer.class);
                         continue;
                     } catch (final ClassCastException e) {
                     }
-                try {
-                    obj.getLong(key);
-                    this.fieldNameAndType.put(key, Long.class);
-                    continue;
-                } catch (final ClassCastException e) {
+                    try {
+                        obj.getLong(key);
+                        this.fieldNameAndType.put(key, Long.class);
+                        continue;
+                    } catch (final ClassCastException e) {
+                    }
+                    try {
+                        obj.getDouble(key);
+                        this.fieldNameAndType.put(key, Double.class);
+                        continue;
+                    } catch (final ClassCastException e) {
+                    }
+                    try {
+                        obj.getBoolean(key);
+                        this.fieldNameAndType.put(key, Boolean.class);
+                        continue;
+                    } catch (final ClassCastException e) {
+                    }
+                    try {
+                        obj.getDate(key);
+                        this.fieldNameAndType.put(key, Date.class);
+                        continue;
+                    } catch (final ClassCastException e) {
+                    }
+                    this.fieldNameAndType.put(key, String.class);
                 }
-                try {
-                    obj.getDouble(key);
-                    this.fieldNameAndType.put(key, Double.class);
-                    continue;
-                } catch (final ClassCastException e) {
-                }
-                try {
-                    obj.getBoolean(key);
-                    this.fieldNameAndType.put(key, Boolean.class);
-                    continue;
-                } catch (final ClassCastException e) {
-                }
-                try {
-                    obj.getDate(key);
-                    this.fieldNameAndType.put(key, Date.class);
-                    continue;
-                } catch (final ClassCastException e) {
-                }
-                this.fieldNameAndType.put(key, String.class);
             }
         }
         this.entityName = collection.trim().isEmpty() ? "Document" + System.currentTimeMillis() : collection;
@@ -128,25 +129,31 @@ public class EntityConverter {
         String query = "";
         query += "CREATE TABLE IF NOT EXISTS " + this.entityName + "(id INT PRIMARY KEY AUTO_INCREMENT, ";
         final Iterator<String> iterator = this.fieldNameAndType.keySet().iterator();
+        final List<String> orderedKeys = new ArrayList<>();
+        String placeholders = " (id, ";
         while (iterator.hasNext()) {
             final String fieldName = iterator.next();
+            orderedKeys.add(fieldName);
             query += fieldName + " " + getLegalTypeForMySQL(this.fieldNameAndType.get(fieldName)) + (iterator
                     .hasNext() ? ", " : "");
+            placeholders += fieldName + (iterator.hasNext() ? "," : "");
         }
         query += ");\n";
+        placeholders += ")";
         for (final Document document : this.entities) {
-            query += "INSERT INTO " + this.entityName + " VALUES " + "(" + this.idSequence + ", ";
-            final Iterator<String> documentIterator = this.fieldNameAndType.keySet().iterator();
-            while (documentIterator.hasNext()) {
-                final String fieldName = documentIterator.next();
+
+            query += "INSERT INTO " + this.entityName + placeholders + " VALUES " + "(" + this.idSequence + ", ";
+            for (int i = 0; i < orderedKeys.size(); i++) {
+                final String fieldName = orderedKeys.get(i);
                 query += (this.fieldNameAndType.get(fieldName).equals(String.class) ? "'" + document.get(fieldName)
-                        .toString() + "'" : document.get(fieldName).toString()) + "" + (documentIterator
-                        .hasNext() ? ", " : "");
+                        .toString() + "'" : document.get(fieldName).toString()) + "" + (i < orderedKeys
+                        .size() - 1 ? ", " : "");
             }
             query += ");\n";
             this.idSequence++;
         }
         this.idSequence = 1;
+        System.out.println(query);
         return query;
     }
 

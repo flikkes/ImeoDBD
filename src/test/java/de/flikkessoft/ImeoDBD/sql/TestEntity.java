@@ -1,4 +1,4 @@
-package de.flikkessoft.ImeoDBD;
+package de.flikkessoft.ImeoDBD.sql;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

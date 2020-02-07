@@ -1,3 +1,6 @@
 /home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/ImeoDbdApplicationTests.java
-/home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/TestEntity.java
+/home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/sql/TestEntityRepository.java
+/home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/mongo/TestEntityMongo.java
+/home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/sql/TestEntity.java
 /home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/EntityConverterTest.java
+/home/flikkes/ImeoDBD/src/test/java/de/flikkessoft/ImeoDBD/MigrationTest.java
